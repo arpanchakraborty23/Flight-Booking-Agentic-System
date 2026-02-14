@@ -16,4 +16,5 @@ dependencies = [
     "langfuse>=3.14.1",
     "langgraph>=1.0.8",
     "uvicorn>=0.40.0",
+    "gh>=0.0.4",
 ]

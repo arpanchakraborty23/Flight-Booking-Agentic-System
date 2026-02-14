@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Booking Agent</title>
+    <meta name="description" content="AI-powered flight search and booking assistant">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,66 +16,119 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-            color: #333;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e4e4e7;
             display: flex;
             height: 100vh;
+            overflow: hidden;
         }
 
+        /* ─── Layout ─── */
         .container {
             display: flex;
             width: 100%;
             height: 100vh;
         }
 
-        /* Chat Section */
+        /* ─── Chat Section ─── */
         .chat-section {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: white;
-            border-right: 1px solid #ddd;
+            background: #0f1117;
+            min-width: 0;
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #1a1b2e 0%, #16213e 100%);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            flex-shrink: 0;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-header-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
         }
 
         .chat-header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #f4f4f5;
         }
 
         .chat-header p {
-            font-size: 13px;
-            opacity: 0.9;
+            font-size: 12px;
+            color: #71717a;
+            margin-top: 1px;
         }
 
+        .session-badge {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.2s;
+        }
+
+        .session-badge:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .session-dot {
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* ─── Messages ─── */
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 8px;
+            scroll-behavior: smooth;
         }
 
         .message {
             display: flex;
-            margin-bottom: 5px;
             animation: slideIn 0.3s ease-out;
+            max-width: 75%;
         }
 
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(8px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -79,240 +136,313 @@
         }
 
         .message.user {
-            justify-content: flex-end;
+            align-self: flex-end;
         }
 
         .message.agent {
-            justify-content: flex-start;
+            align-self: flex-start;
         }
 
         .message-text {
-            max-width: 70%;
             padding: 12px 16px;
-            border-radius: 12px;
-            word-wrap: break-word;
+            border-radius: 16px;
             font-size: 14px;
-            line-height: 1.4;
+            line-height: 1.6;
+            word-wrap: break-word;
+            white-space: pre-wrap;
         }
 
         .message.user .message-text {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #6366f1, #7c3aed);
             color: white;
             border-bottom-right-radius: 4px;
         }
 
         .message.agent .message-text {
-            background: #e9ecef;
-            color: #333;
+            background: #1e1f2e;
+            color: #d4d4d8;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-bottom-left-radius: 4px;
         }
 
+        /* ─── Welcome message ─── */
+        .welcome-message .message-text {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            padding: 7px 14px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #a5b4fc;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: #6366f1;
+            color: #c7d2fe;
+        }
+
+        /* ─── Input Area ─── */
         .input-area {
-            padding: 20px;
-            border-top: 1px solid #ddd;
+            padding: 16px 24px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
             display: flex;
             gap: 10px;
-            background: white;
+            background: #0f1117;
+            flex-shrink: 0;
         }
 
-        input[type="text"] {
+        #messageInput {
             flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 24px;
+            padding: 14px 20px;
+            background: #1e1f2e;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
             font-size: 14px;
+            color: #e4e4e7;
             outline: none;
-            transition: border-color 0.3s;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input[type="text"]:focus {
-            border-color: #2a5298;
-            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        #messageInput:focus {
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        #messageInput::placeholder {
+            color: #52525b;
         }
 
         .send-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #6366f1, #7c3aed);
             color: white;
             border: none;
-            border-radius: 24px;
+            border-radius: 14px;
             cursor: pointer;
             font-weight: 600;
-            transition: transform 0.2s;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
         }
 
         .send-btn:hover {
-            transform: scale(1.05);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
         }
 
         .send-btn:active {
-            transform: scale(0.98);
+            transform: translateY(0);
         }
 
-        /* Results Panel */
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ─── Results Panel ─── */
         .results-panel {
-            width: 400px;
-            background: white;
-            overflow-y: auto;
+            width: 420px;
+            background: #13141f;
             display: flex;
             flex-direction: column;
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            flex-shrink: 0;
         }
 
         .results-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            flex-shrink: 0;
+        }
+
+        .results-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f4f4f5;
+        }
+
+        .flight-count {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
             font-weight: 600;
         }
 
         .results-content {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             overflow-y: auto;
         }
 
+        /* ─── Flight Cards ─── */
         .flight-card {
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
+            background: #1a1b2e;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.25s;
         }
 
         .flight-card:hover {
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-color: rgba(99, 102, 241, 0.4);
             transform: translateY(-2px);
-            border-color: #2a5298;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .flight-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         .airline-name {
             font-weight: 600;
-            color: #1e3c72;
-            margin-bottom: 8px;
-            font-size: 14px;
+            color: #a5b4fc;
+            font-size: 13px;
+        }
+
+        .flight-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #22c55e;
         }
 
         .flight-route {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
         }
 
-        .time {
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .route-info {
+        .flight-endpoint {
             text-align: center;
+        }
+
+        .flight-endpoint .code {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f4f4f5;
+        }
+
+        .flight-endpoint .time {
             font-size: 12px;
-            color: #666;
+            color: #71717a;
+            margin-top: 2px;
+        }
+
+        .flight-line {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .flight-line-bar {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #7c3aed);
+            border-radius: 1px;
+            position: relative;
+        }
+
+        .flight-line-bar::after {
+            content: '✈';
+            position: absolute;
+            right: -4px;
+            top: -8px;
+            font-size: 14px;
+        }
+
+        .flight-line .duration {
+            font-size: 11px;
+            color: #71717a;
+            margin-top: 4px;
         }
 
         .flight-meta {
             display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
+            gap: 12px;
+            font-size: 11px;
+            color: #52525b;
         }
 
-        .price {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2a5298;
-            text-align: right;
+        .flight-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
+        /* ─── Empty State ─── */
         .empty-state {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100%;
-            color: #999;
+            color: #52525b;
             text-align: center;
         }
 
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
         .empty-state p {
-            margin-bottom: 10px;
+            font-size: 13px;
+            line-height: 1.6;
         }
 
-        /* Scrollbar */
-        .messages-container::-webkit-scrollbar,
-        .results-content::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .messages-container::-webkit-scrollbar-track,
-        .results-content::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb,
-        .results-content::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb:hover,
-        .results-content::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .results-panel {
-                display: none;
-            }
-
-            .chat-section {
-                border-right: none;
-            }
-        }
-
-        .quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .action-btn {
-            padding: 8px 12px;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-
-        .action-btn:hover {
-            background: #e0e0e0;
-            border-color: #2a5298;
-        }
-
+        /* ─── Typing Indicator ─── */
         .typing-indicator {
             display: flex;
-            gap: 4px;
-            padding: 12px 16px;
-            background: #e9ecef;
-            border-radius: 12px;
+            gap: 5px;
+            padding: 14px 18px;
+            background: #1e1f2e;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
             width: fit-content;
         }
 
         .typing-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background: #999;
+            background: #6366f1;
             animation: bounce 1.4s infinite;
         }
 
@@ -325,170 +455,289 @@
         }
 
         @keyframes bounce {
-            0%, 80%, 100% {
-                opacity: 0.5;
+
+            0%,
+            80%,
+            100% {
+                opacity: 0.3;
                 transform: translateY(0);
             }
+
             40% {
                 opacity: 1;
-                transform: translateY(-8px);
+                transform: translateY(-6px);
+            }
+        }
+
+        /* ─── Scrollbar ─── */
+        .messages-container::-webkit-scrollbar,
+        .results-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .messages-container::-webkit-scrollbar-track,
+        .results-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb,
+        .results-content::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 2px;
+        }
+
+        /* ─── Search params banner ─── */
+        .search-banner {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1024px) {
+            .results-panel {
+                display: none;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Chat Section -->
         <div class="chat-section">
             <div class="chat-header">
-                <h1>✈️ Flight Booking Agent</h1>
-                <p>AI-powered flight search and booking assistant</p>
+                <div class="chat-header-left">
+                    <div class="chat-header-icon">✈️</div>
+                    <div>
+                        <h1>Flight Booking Agent</h1>
+                        <p>AI-powered flight search & booking</p>
+                    </div>
+                </div>
+                <div class="session-badge" onclick="newSession()" title="Click for new session">
+                    <div class="session-dot"></div>
+                    <span id="sessionLabel">New Session</span>
+                </div>
             </div>
 
             <div class="messages-container" id="messagesContainer">
-                <div class="message agent">
+                <div class="message agent welcome-message">
                     <div class="message-text">
-                        👋 Hi! I'm your flight booking assistant. I can help you find and book flights. What are you looking for? Try something like:
+                        👋 Hi! I'm your flight booking assistant. I can help you find and book flights.
+
+                        What do you need? Try something like:
                         <div class="quick-actions">
-                            <button class="action-btn" onclick="sendMessage('Flights from New York to Los Angeles')">NYC to LAX</button>
-                            <button class="action-btn" onclick="sendMessage('Show me flights tomorrow')">Tomorrow's flights</button>
-                            <button class="action-btn" onclick="sendMessage('Best deals available')">Best deals</button>
+                            <button class="action-btn"
+                                onclick="sendMessage('Find flights from Kolkata to Mumbai on 15th March 2026')">KOL →
+                                BOM</button>
+                            <button class="action-btn"
+                                onclick="sendMessage('Search flights from Delhi to Goa for next week')">DEL →
+                                GOI</button>
+                            <button class="action-btn"
+                                onclick="sendMessage('I need a cheap flight from Chennai to Bangalore')">MAA →
+                                BLR</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="input-area">
-                <input 
-                    type="text" 
-                    id="messageInput" 
-                    placeholder="Ask about flights, dates, prices..." 
-                    autocomplete="off"
-                >
-                <button class="send-btn" onclick="sendMessage()">Send</button>
+                <input type="text" id="messageInput" placeholder="Ask about flights, dates, prices..."
+                    autocomplete="off">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    Send ↗
+                </button>
             </div>
         </div>
 
         <!-- Results Panel -->
         <div class="results-panel">
-            <div class="results-header">Available Flights</div>
+            <div class="results-header">
+                <h2>✈️ Available Flights</h2>
+                <span class="flight-count" id="flightCount">0 results</span>
+            </div>
             <div class="results-content" id="resultsContent">
                 <div class="empty-state">
-                    <p>💬 Start a conversation</p>
-                    <p style="font-size: 12px;">Results will appear here</p>
+                    <div class="empty-state-icon">🔍</div>
+                    <p>Search for flights to see<br>results here</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // ──────────────────────────────────────────
+        // State
+        // ──────────────────────────────────────────
+        let threadId = null;
         const messagesContainer = document.getElementById('messagesContainer');
         const resultsContent = document.getElementById('resultsContent');
         const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const flightCount = document.getElementById('flightCount');
+        const sessionLabel = document.getElementById('sessionLabel');
 
-        const flights = [
-            { airline: 'American Airlines AA 101', from: 'JFK', to: 'LAX', departure: '08:00', arrival: '14:30', duration: '5h 30m', price: 245, stops: 0 },
-            { airline: 'United Airlines UA 567', from: 'JFK', to: 'LAX', departure: '10:45', arrival: '17:00', duration: '6h 15m', price: 189, stops: 1 },
-            { airline: 'Delta Airlines DL 234', from: 'JFK', to: 'LAX', departure: '14:20', arrival: '20:05', duration: '5h 45m', price: 320, stops: 0 },
-            { airline: 'Southwest Airlines SW 789', from: 'JFK', to: 'LAX', departure: '06:15', arrival: '13:15', duration: '7h 00m', price: 165, stops: 1 }
-        ];
+        // Initialize session on page load
+        initSession();
 
-        function sendMessage(text = null) {
+        async function initSession() {
+            try {
+                const res = await fetch('/api/new-session');
+                const data = await res.json();
+                threadId = data.thread_id;
+                sessionLabel.textContent = `Session ${threadId.substring(0, 6)}`;
+            } catch (e) {
+                threadId = crypto.randomUUID();
+                sessionLabel.textContent = `Local ${threadId.substring(0, 6)}`;
+            }
+        }
+
+        async function newSession() {
+            await initSession();
+            // Clear chat
+            messagesContainer.innerHTML = '';
+            addWelcomeMessage();
+            // Clear results
+            resultsContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <p>Search for flights to see<br>results here</p>
+                </div>
+            `;
+            flightCount.textContent = '0 results';
+        }
+
+        function addWelcomeMessage() {
+            const html = `
+                <div class="message agent welcome-message">
+                    <div class="message-text">
+                        👋 Hi! I'm your flight booking assistant. I can help you find and book flights.\n\nWhat do you need? Try something like:
+                        <div class="quick-actions">
+                            <button class="action-btn" onclick="sendMessage('Find flights from Kolkata to Mumbai on 15th March 2026')">KOL → BOM</button>
+                            <button class="action-btn" onclick="sendMessage('Search flights from Delhi to Goa for next week')">DEL → GOI</button>
+                            <button class="action-btn" onclick="sendMessage('I need a cheap flight from Chennai to Bangalore')">MAA → BLR</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.insertAdjacentHTML('beforeend', html);
+        }
+
+        // ──────────────────────────────────────────
+        // Send Message
+        // ──────────────────────────────────────────
+        async function sendMessage(text = null) {
             const message = text || messageInput.value.trim();
-            
             if (!message) return;
 
             // Add user message
             addMessage(message, 'user');
             messageInput.value = '';
 
-            // Show typing indicator
+            // Disable input
+            setInputEnabled(false);
+
+            // Show typing
             showTypingIndicator();
 
-            // Simulate agent response
-            setTimeout(() => {
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        thread_id: threadId,
+                    }),
+                });
+
                 removeTypingIndicator();
-                handleAgentResponse(message);
-            }, 1000);
+
+                if (!res.ok) {
+                    throw new Error(`Server error: ${res.status}`);
+                }
+
+                const data = await res.json();
+
+                // Add agent response
+                addMessage(data.response, 'agent');
+
+                // Update flight results if available
+                if (data.ranked_flights && data.ranked_flights.length > 0) {
+                    displayFlights(data.ranked_flights, data.search_params);
+                }
+
+            } catch (err) {
+                removeTypingIndicator();
+                addMessage('⚠️ Sorry, something went wrong. Please try again.', 'agent');
+                console.error('Chat error:', err);
+            }
+
+            setInputEnabled(true);
+            messageInput.focus();
         }
 
+        // ──────────────────────────────────────────
+        // UI Helpers
+        // ──────────────────────────────────────────
         function addMessage(text, sender) {
             const messageEl = document.createElement('div');
             messageEl.className = `message ${sender}`;
-            messageEl.innerHTML = `<div class="message-text">${escapeHtml(text)}</div>`;
+            const textEl = document.createElement('div');
+            textEl.className = 'message-text';
+
+            if (sender === 'agent') {
+                // Render agent response with basic formatting
+                textEl.innerHTML = formatResponse(text);
+            } else {
+                // User messages: plain text (safe from XSS)
+                textEl.textContent = text;
+            }
+
+            messageEl.appendChild(textEl);
             messagesContainer.appendChild(messageEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        function handleAgentResponse(userMessage) {
-            const lowerMessage = userMessage.toLowerCase();
-            let response = '';
+        function formatResponse(text) {
+            // Escape HTML first for safety
+            let safe = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
 
-            if (lowerMessage.includes('flight') || lowerMessage.includes('from') || lowerMessage.includes('to')) {
-                response = '🔍 I found several flights matching your criteria. Check the results panel on the right!';
-                displayFlights();
-            } else if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('cheap')) {
-                response = '💰 The cheapest option is Southwest Airlines at $165. Would you like to book it?';
-                displayFlights(true);
-            } else if (lowerMessage.includes('fast') || lowerMessage.includes('quick') || lowerMessage.includes('direct')) {
-                response = '⚡ The fastest direct flights are American Airlines and Delta. Both are under 6 hours!';
-                displayFlights();
-            } else {
-                response = '✈️ I can help you search for flights, compare prices, and make bookings. Try asking about specific routes or dates!';
-            }
+            // Convert **bold** to <strong>
+            safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
-            addMessage(response, 'agent');
+            // Convert newlines to <br>
+            safe = safe.replace(/\n/g, '<br>');
+
+            return safe;
         }
 
-        function displayFlights(sortByPrice = false) {
-            let sorted = [...flights];
-            if (sortByPrice) {
-                sorted.sort((a, b) => a.price - b.price);
-            }
-
-            resultsContent.innerHTML = sorted.map(flight => `
-                <div class="flight-card" onclick="bookFlight('${flight.airline}')">
-                    <div class="airline-name">${flight.airline}</div>
-                    <div class="flight-route">
-                        <div class="time">${flight.departure}</div>
-                        <div class="route-info">
-                            ${flight.stops === 0 ? '✈️ Direct' : `📍 ${flight.stops} stop`}<br>
-                            ${flight.duration}
-                        </div>
-                        <div class="time">${flight.arrival}</div>
-                    </div>
-                    <div class="flight-meta">
-                        <span>${flight.from} → ${flight.to}</span>
-                        <span>🛫 ${flight.departure}</span>
-                    </div>
-                    <div class="price">$${flight.price}</div>
-                </div>
-            `).join('');
-        }
-
-        function bookFlight(airline) {
-            const message = `Book ${airline}`;
-            addMessage(message, 'user');
-            showTypingIndicator();
-
-            setTimeout(() => {
-                removeTypingIndicator();
-                addMessage(`✅ Great choice! Proceeding with booking for ${airline}. Please provide passenger details to complete the booking.`, 'agent');
-            }, 800);
+        function setInputEnabled(enabled) {
+            messageInput.disabled = !enabled;
+            sendBtn.disabled = !enabled;
         }
 
         function showTypingIndicator() {
-            const messageEl = document.createElement('div');
-            messageEl.className = 'message agent';
-            messageEl.id = 'typingIndicator';
-            messageEl.innerHTML = `
+            const el = document.createElement('div');
+            el.className = 'message agent';
+            el.id = 'typingIndicator';
+            el.innerHTML = `
                 <div class="typing-indicator">
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                 </div>
             `;
-            messagesContainer.appendChild(messageEl);
+            messagesContainer.appendChild(el);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
@@ -497,16 +746,139 @@
             if (indicator) indicator.remove();
         }
 
+        // ──────────────────────────────────────────
+        // Flight Results Display
+        // ──────────────────────────────────────────
+        function displayFlights(flights, searchParams) {
+            let html = '';
+
+            // Search params banner
+            if (searchParams) {
+                const origin = searchParams.origin || '?';
+                const dest = searchParams.destination || '?';
+                const date = searchParams.departure_date || '?';
+                html += `
+                    <div class="search-banner">
+                        🔍 ${origin} → ${dest} · ${date} · ${searchParams.adults || 1} traveler(s)
+                    </div>
+                `;
+            }
+
+            // Flight cards
+            flights.forEach((flight, i) => {
+                html += buildFlightCard(flight, i + 1);
+            });
+
+            resultsContent.innerHTML = html;
+            flightCount.textContent = `${flights.length} result${flights.length !== 1 ? 's' : ''}`;
+        }
+
+        function buildFlightCard(flight, rank) {
+            // Handle both structured and raw string data from the API
+            // The API might return nested objects, so we need to extract info safely
+            const airline = flight.airline || flight.validatingAirlineCodes?.[0] || `Flight #${rank}`;
+            const price = flight.price?.total || flight.price?.grandTotal || flight.price || '—';
+            const currency = flight.price?.currency || '₹';
+
+            // Try to extract itinerary details
+            let originCode = '—';
+            let destCode = '—';
+            let departure = '—';
+            let arrival = '—';
+            let duration = '—';
+            let stops = 0;
+
+            if (flight.itineraries && flight.itineraries[0]) {
+                const itin = flight.itineraries[0];
+                const segments = itin.segments || [];
+                duration = itin.duration || '—';
+
+                if (segments.length > 0) {
+                    originCode = segments[0].departure?.iataCode || '—';
+                    departure = formatTime(segments[0].departure?.at);
+                    const lastSeg = segments[segments.length - 1];
+                    destCode = lastSeg.arrival?.iataCode || '—';
+                    arrival = formatTime(lastSeg.arrival?.at);
+                    stops = segments.length - 1;
+                }
+            }
+
+            // fallback for simpler data structures
+            if (originCode === '—' && flight.origin) originCode = flight.origin;
+            if (destCode === '—' && flight.destination) destCode = flight.destination;
+            if (departure === '—' && flight.departure) departure = flight.departure;
+            if (arrival === '—' && flight.arrival) arrival = flight.arrival;
+            if (duration === '—' && flight.duration) duration = flight.duration;
+
+            // Clean duration
+            const durationFormatted = formatDuration(duration);
+
+            return `
+                <div class="flight-card" onclick="selectFlight('${airline}')">
+                    <div class="flight-card-header">
+                        <div class="airline-name">${escapeHtml(String(airline))}</div>
+                        <div class="flight-price">${currency} ${price}</div>
+                    </div>
+                    <div class="flight-route">
+                        <div class="flight-endpoint">
+                            <div class="code">${escapeHtml(String(originCode))}</div>
+                            <div class="time">${departure}</div>
+                        </div>
+                        <div class="flight-line">
+                            <div class="flight-line-bar"></div>
+                            <div class="duration">${durationFormatted} · ${stops === 0 ? 'Direct' : stops + ' stop'}</div>
+                        </div>
+                        <div class="flight-endpoint">
+                            <div class="code">${escapeHtml(String(destCode))}</div>
+                            <div class="time">${arrival}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectFlight(airline) {
+            sendMessage(`I'd like to book the ${airline} flight`);
+        }
+
+        // ──────────────────────────────────────────
+        // Formatting Utilities
+        // ──────────────────────────────────────────
+        function formatTime(isoString) {
+            if (!isoString) return '—';
+            try {
+                const d = new Date(isoString);
+                return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            } catch {
+                return isoString;
+            }
+        }
+
+        function formatDuration(dur) {
+            if (!dur || dur === '—') return '—';
+            // Convert ISO 8601 duration like PT5H30M to 5h 30m
+            const match = String(dur).match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+            if (match) {
+                const h = match[1] || '0';
+                const m = match[2] || '0';
+                return `${h}h ${m}m`;
+            }
+            return dur;
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Send on Enter
+        // ──────────────────────────────────────────
+        // Keyboard Shortcut
+        // ──────────────────────────────────────────
         messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+            if (e.key === 'Enter' && !sendBtn.disabled) sendMessage();
         });
     </script>
 </body>
+
 </html>

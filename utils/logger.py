@@ -40,12 +40,15 @@ def setup_logger(
             "%Y-%m-%d %H:%M:%S"
         )
 
-        # File handler
-        file_handler = logging.FileHandler(log_file)
+        # File handler (UTF-8 so emojis don't crash on Windows)
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setFormatter(formatter)
 
-        # Console handler
-        console_handler = logging.StreamHandler()
+        # Console handler (UTF-8 with fallback for Windows cp1252)
+        import sys
+        console_handler = logging.StreamHandler(
+            stream=open(sys.stdout.fileno(), mode='w', encoding='utf-8', errors='replace', closefd=False)
+        )
         console_handler.setFormatter(formatter)
 
         logger.addHandler(file_handler)

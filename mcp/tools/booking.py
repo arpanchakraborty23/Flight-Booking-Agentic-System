@@ -1,4 +1,3 @@
-from fastmcp import FastMCP
 from typing import Optional, Dict, Any
 import os
 import json
@@ -7,8 +6,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # MCP-internal imports (no backend dependencies)
-from mcp.utils.logger import setup_logger
-from mcp.utils.exception import MCPException
+from utils.logger import setup_logger
+from utils.exception import MCPException
 
 load_dotenv()
 
@@ -17,14 +16,10 @@ logger = setup_logger(name="mcp_booking_agent")
 # MongoDB connection (optional - will work without it)
 try:
     from pymongo import MongoClient
-    from pymongo.errors import ConnectionFailure
     HAS_MONGODB = True
 except ImportError:
     HAS_MONGODB = False
     logger.warning("pymongo not installed - bookings will be stored in memory")
-
-# Initialize MCP
-booking_mcp = FastMCP(name="booking_agent", version="0.1.0", stateless_http=True)
 
 # In-memory fallback storage
 IN_MEMORY_BOOKINGS: Dict[str, Dict[str, Any]] = {}
@@ -140,7 +135,7 @@ class BookingService:
             }
 
             # Store in MongoDB or in-memory
-            if self.bookings_collection:
+            if self.bookings_collection is not None:
                 result = self.bookings_collection.insert_one(booking_doc)
                 logger.info(f"✅ Booking {booking_id} stored in MongoDB")
             else:
@@ -173,7 +168,7 @@ class BookingService:
             Booking details or None if not found
         """
         try:
-            if self.bookings_collection:
+            if self.bookings_collection is not None:
                 booking = self.bookings_collection.find_one({"booking_id": booking_id})
             else:
                 booking = IN_MEMORY_BOOKINGS.get(booking_id)
@@ -205,7 +200,7 @@ class BookingService:
             if email:
                 query["passenger.email"] = email
 
-            if self.bookings_collection:
+            if self.bookings_collection is not None:
                 bookings = list(
                     self.bookings_collection.find(query).limit(limit)
                 )
@@ -244,7 +239,7 @@ class BookingService:
                 "updated_at": datetime.utcnow().isoformat(),
             }
 
-            if self.bookings_collection:
+            if self.bookings_collection is not None:
                 result = self.bookings_collection.update_one(
                     {"booking_id": booking_id},
                     {"$set": update_doc}
@@ -277,133 +272,3 @@ class BookingService:
 
 # Initialize booking service
 booking_service = BookingService()
-
-
-@booking_mcp.tool(
-    name="create_booking",
-    description="Create a flight booking and store in database"
-)
-def create_booking(
-    passenger_name: str,
-    passenger_email: str,
-    flight_number: str,
-    airline: str,
-    departure_city: str,
-    arrival_city: str,
-    departure_date: str,
-    departure_time: str,
-    arrival_time: str,
-    price: str,
-    adults: int = 1,
-    children: int = 0,
-    infants: int = 0,
-) -> Dict[str, Any]:
-    """
-    Create a flight booking and store in MongoDB or memory.
-
-    Args:
-        passenger_name: Full name of passenger
-        passenger_email: Email address
-        flight_number: Flight number (e.g., "AI123")
-        airline: Airline name
-        departure_city: Departure city code (e.g., "DEL")
-        arrival_city: Arrival city code (e.g., "BOM")
-        departure_date: Date in YYYY-MM-DD format
-        departure_time: Time in HH:MM format
-        arrival_time: Time in HH:MM format
-        price: Price in INR
-        adults: Number of adults
-        children: Number of children
-        infants: Number of infants
-
-    Returns:
-        Booking confirmation with booking_id
-    """
-    return booking_service.create_booking(
-        passenger_name=passenger_name,
-        passenger_email=passenger_email,
-        flight_number=flight_number,
-        airline=airline,
-        departure_city=departure_city,
-        arrival_city=arrival_city,
-        departure_date=departure_date,
-        departure_time=departure_time,
-        arrival_time=arrival_time,
-        price=price,
-        adults=adults,
-        children=children,
-        infants=infants,
-    )
-
-
-@booking_mcp.tool(
-    name="get_booking",
-    description="Retrieve booking details by booking ID"
-)
-def get_booking(booking_id: str) -> Dict[str, Any]:
-    """
-    Get booking details by booking ID.
-
-    Args:
-        booking_id: The booking ID to retrieve
-
-    Returns:
-        Booking details
-    """
-    booking = booking_service.get_booking(booking_id)
-    if booking:
-        return {
-            "success": True,
-            "booking": booking,
-        }
-    return {
-        "success": False,
-        "message": f"Booking {booking_id} not found",
-    }
-
-
-@booking_mcp.tool(
-    name="list_bookings",
-    description="List all bookings, optionally filtered by email"
-)
-def list_bookings(
-    email: Optional[str] = None,
-    limit: int = 10
-) -> Dict[str, Any]:
-    """
-    List bookings with optional email filter.
-
-    Args:
-        email: Filter by passenger email (optional)
-        limit: Maximum number of results
-
-    Returns:
-        List of bookings
-    """
-    bookings = booking_service.list_bookings(email=email, limit=limit)
-    return {
-        "success": True,
-        "count": len(bookings),
-        "bookings": bookings,
-    }
-
-
-@booking_mcp.tool(
-    name="cancel_booking",
-    description="Cancel a flight booking"
-)
-def cancel_booking(
-    booking_id: str,
-    reason: str = "Customer requested cancellation"
-) -> Dict[str, Any]:
-    """
-    Cancel a booking.
-
-    Args:
-        booking_id: The booking ID to cancel
-        reason: Cancellation reason
-
-    Returns:
-        Cancellation confirmation
-    """
-    return booking_service.cancel_booking(booking_id=booking_id, reason=reason)

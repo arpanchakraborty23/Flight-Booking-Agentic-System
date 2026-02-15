@@ -1,8 +1,3 @@
-from fastmcp import FastMCP
-from typing import List, Optional, Literal
-
-mcp = FastMCP(name="search_agent", version="0.1.0", stateless_http=True)
-
 import sys
 import os
 import json
@@ -10,14 +5,13 @@ import re
 import time
 import requests
 from datetime import date
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
 
 # MCP-internal imports (no backend dependencies)
-from mcp.constants import AgentState
-from mcp.utils.logger import setup_logger
-from mcp.utils.exception import MCPException
-from mcp.prompts import SEARCH_PARAMS_PROMPT, RANK_FLIGHTS_PROMPT
+from utils.logger import setup_logger
+from utils.exception import MCPException
+from prompts import SEARCH_PARAMS_PROMPT, RANK_FLIGHTS_PROMPT
 
 load_dotenv()
 
@@ -94,7 +88,7 @@ class ResearchAgent:
 
 
 
-    def extract_search_params(self, state: AgentState) -> Dict[str, Any]:
+    def extract_search_params(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
         Use LLM to extract structured flight search parameters from state.
         """
@@ -156,7 +150,7 @@ class ResearchAgent:
             raise MCPException(e, sys)
 
 
-    def rank_flights(self, flights: List[Dict], state: AgentState):
+    def rank_flights(self, flights: List[Dict], state: Dict[str, Any]):
 
         if not flights:
             return []
@@ -184,7 +178,7 @@ class ResearchAgent:
             return flights
 
 
-    def research(self, state: AgentState) -> Dict[str, Any]:
+    def research(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
         Main orchestration method (LangGraph node):
         1. Extract params via LLM
@@ -268,59 +262,4 @@ class ResearchAgent:
                             "Please try again with your travel details.",
             }
 
-
-
-@mcp.tool(name="search_agent", description="Agent to search for flights based on user query")
-def search_agent(
-    query: str,
-    top_k: Optional[int] = 5,
-    rank_results: Optional[bool] = True
-) -> Dict[str, Any]:
-    """
-    Search for flights based on user query.
-    
-    Args:
-        query (str): User's natural language query about flight search.
-        top_k (int, optional): Number of top results to return. Defaults to 5.
-        rank_results (bool, optional): Whether to rank results using LLM. Defaults to True.
-    
-    Returns:
-        Dict[str, Any]: Dictionary containing search results and ranked flights.
-    """
-    try:
-        # Initialize LLM
-        from langchain_mistralai import ChatMistralAI
-        llm = ChatMistralAI(model_name="mistral-large-latest",api_key=os.getenv("MISTRAL_API_KEY"))
-        
-        # Initialize research agent
-        agent = ResearchAgent(llm=llm)
-        
-        # Create state with query
-        state: AgentState = {
-            "query": query,
-            "memory": []
-        }
-        
-        # Run research
-        result = agent.research(state)
-        
-        # Extract and limit results
-        ranked_flights = result.get("ranked_flights", [])
-        if top_k:
-            ranked_flights = ranked_flights[:top_k]
-        
-        return {
-            "search_params": result.get("search_params", {}),
-            "ranked_flights": ranked_flights,
-            "response": result.get("response", "Flights found successfully.")
-        }
-        
-    except Exception as e:
-        logger.error(f"Search agent failed: {e}")
-        return {
-            "search_params": {},
-            "ranked_flights": [],
-            "response": "Sorry, I encountered an error while searching for flights. Please try again with your travel details."
-        }
-    
 

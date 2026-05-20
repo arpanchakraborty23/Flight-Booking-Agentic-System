@@ -1,156 +1,157 @@
-# ✈️ Flight Booking Agentic System
+# ✈️ Travel Agent System - Custom Travel Planning from Company Catalog
 
-An AI-powered flight search and booking assistant built with **LangGraph**, **Mistral AI**, and **Amadeus API**. The agent uses a multi-node graph architecture to route queries, search real flights, rank results, and maintain conversation memory across turns.
+An AI-powered travel planning system that provides custom travel booking experiences through multi-modal interfaces (voice and web). The system leverages agentic AI to search flights, plan itineraries, and assist users through natural conversations.
 
 ![Python](https://img.shields.io/badge/Python-3.14+-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.129+-green?logo=fastapi)
-![LangGraph](https://img.shields.io/badge/LangGraph-1.0+-purple)
-![Mistral](https://img.shields.io/badge/Mistral_AI-LLM-orange)
-![Amadeus](https://img.shields.io/badge/Amadeus-Flight_API-yellow)
+![LiveKit](https://img.shields.io/badge/LiveKit-Voice_AI-orange)
+![React](https://img.shields.io/badge/React-19+-blue?logo=react)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)
 
 ---
 
-## Architecture
+## 🎯 Overview
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    FastAPI (app.py)                       │
-│         POST /api/chat  │  GET /api/stream               │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────────────────┐
-│                  LangGraph Agent                         │
-│                                                          │
-│   START                                                  │
-│     │                                                    │
-│     ▼                                                    │
-│   route_node ──── (general) ──► memory_node ──► END      │
-│     │                                                    │
-│     │ (research)                                         │
-│     ▼                                                    │
-│   research_node ──► response_node ──► memory_node ──► END│
-│                                                          │
-│   Checkpointer: InMemorySaver (thread-based memory)      │
-└─────────────────────────────────────────────────────────┘
-```
+This Travel Agent System is a comprehensive AI-powered platform that enables users to book custom travel through natural conversations. The system combines:
 
-### Node Descriptions
-
-| Node | File | Purpose |
-|------|------|---------|
-| **route_node** | `backend/nodes/route.py` | Classifies user query → `general`, `research`, or `booking` |
-| **research_node** | `backend/nodes/research.py` | Extracts search params via LLM → calls Amadeus API → ranks flights |
-| **response_node** | `backend/agent/agent.py` | Formats ranked flights into a user-friendly response via LLM |
-| **memory_node** | `backend/agent/agent.py` | Saves `{user, assistant}` turns to conversation memory |
+- **Voice Interaction**: Real-time voice conversations using LiveKit AI
+- **Web Interface**: Modern React-based UI for visual interactions
+- **Agent Orchestration**: Multiple specialized AI agents working together
+- **Flight Search**: Integration with Amadeus API for real-time flight data
+- **Multi-language Support**: English, Bengali, and Hindi language capabilities
 
 ---
 
-## Project Structure
+## 🏗️ Architecture
 
 ```
-Flight-Booking-Agentic-System/
-├── app.py                          # FastAPI server with API endpoints
-├── main.py                         # CLI test script for the agent
-├── pyproject.toml                  # Python dependencies
-├── .env                            # Environment variables (API keys)
-│
-├── backend/
-│   ├── agent/
-│   │   ├── __init__.py             # Exports Agent class
-│   │   └── agent.py                # Main Agent class — graph builder, nodes, invocation
-│   ├── nodes/
-│   │   ├── route.py                # RouteAgent — query classification via LLM
-│   │   └── research.py             # ResearchAgent — param extraction, Amadeus API, ranking
-│   └── prompts/
-│       └── __init__.py             # All LLM prompts (route, search, rank, response)
-│
-├── constants/
-│   └── agent_constant.py           # AgentState TypedDict with memory reducer
-│
-├── utils/
-│   ├── logger.py                   # Logging setup (UTF-8, file + console)
-│   └── exception.py                # Custom exception handler
-│
-├── templates/
-│   └── index.html                  # Chat frontend UI (dark theme)
-│
-└── logs/                           # Auto-generated log files
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    User Browser / Web Interface                         │
+│                          (Port 8000:3000)                               │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+                               │ HTTP / WebSocket
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Frontend API Service                               │
+│                    (Flask/FastAPI - Containerized)                      │
+│                                                                         │
+│  ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌────────────────┐      │
+│  │  Web UI    │  │LiveKit   │  │Planner   │  │   Voice Agent  │      │
+│  │  Routes    │◄─│Session   │─►│Agent API │◄─│   Integration  │      │
+│  │            │  │Manager   │  │(Port 8082)│  │(LiveKit WS)    │      │
+│  └────────────┘  └──────────┘  └──────────┘  └────────────────┘      │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+        ┌──────────────────────┼──────────────────────┐
+        │                      │                      │
+        ▼                      ▼                      ▼
+┌───────────────┐     ┌──────────────┐      ┌──────────────┐
+│  Voice Agent  │     │  Planner Agent │      │   MCP Server │
+│  (Port 8081)  │     │  (Port 8082)   │      │  (Port 8083) │
+│               │     │                │      │              │
+│ LiveKit Agent │     │ LangGraph      │      │ Amadeus API  │
+│ VAD Support   │     │ Multi-LLM      │      │ Integration  │
+│ MongoDB/Redis │     │ Flight Routing │      │ Tool Calls   │
+└───────────────┘     └──────────────┘      └──────────────┘
+        │                      │                      │
+        └──────────────────────┼──────────────────────┘
+                               │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+          ┌──────────────┐    ┌─────────────┐
+          │  MongoDB     │    │   Redis     │
+          │  (Sessions)  │    │  (Cache)    │
+          └──────────────┘    └─────────────┘
 ```
+
+### Component Responsibilities
+
+**Frontend API (Port 8000)**
+- Serves React/Next.js web application
+- Manages LiveKit room connections and tokens
+- Routes requests to appropriate backend services
+- Integrates all agent services into unified interface
+
+**Voice Agent (Port 8081)**
+- Handles real-time voice interactions via LiveKit
+- Voice Activity Detection (VAD) for natural conversations
+- Multi-language support (English, Bengali, Hindi)
+- Session management with MongoDB/Redis
+
+**Planner Agent (Port 8082)**
+- Flight search and itinerary planning
+- Routes user queries to appropriate services
+- Multi-LLM support (OpenAI, Anthropic, Mistral)
+- Agent orchestration and workflow management
+
+**MCP Server (Port 8083)**
+- Provides tool-calling interface
+- Integrates with Amadeus API for flight data
+- Handles real-time flight search queries
+- Converts prices (EUR → INR)
 
 ---
 
-## Features
+## ✨ Key Features
 
-### 🧠 Conversation Memory
-- Uses LangGraph's `InMemorySaver` checkpointer for thread-level persistence
-- Each conversation turn (`{user query, assistant response}`) is saved via the `memory_node`
-- Memory is included in the route prompt so the agent maintains context across turns
-- Memory uses `Annotated[List[Dict], operator.add]` reducer for automatic appending
+### 🎤 Multi-Modal Interaction
+- **Voice**: Natural conversations through LiveKit AI
+- **Web UI**: Modern React interface with real-time updates
+- **Chat**: Text-based interaction support
 
-### ⚡ Three Invocation Modes
+### 🧠 Intelligent Agent System
+- **Query Routing**: Automatically classifies and routes user intent
+- **Flight Search**: Real-time flight data from Amadeus API
+- **Itinerary Planning**: Custom travel planning based on preferences
+- **Conversation Memory**: Maintains context across interactions
 
-| Method | Description | Use Case |
-|--------|-------------|----------|
-| `run_agent(query, thread_id)` | Full response, waits for completion | API / backend calls |
-| `stream_agent(query, thread_id)` | Yields `(node_name, state_update)` per node | Debug / progress tracking |
-| `stream_response(query, thread_id)` | Yields response token-by-token | Chat UI / real-time display |
+### 🌍 Multi-Language Support
+- English
+- Bengali
+- Hindi
 
-### 🔍 Smart Routing
-- **General**: Greetings, vague queries → conversational response
-- **Research**: Specific flight details (origin + destination) → Amadeus API search
-- **Booking**: Confirmation of a specific flight → booking flow (planned)
+### 📊 Comprehensive Search
+- Real-time flight availability
+- Price comparison
+- Route optimization
+- Travel time calculations
 
-### 💰 Price Conversion
-- Amadeus test API returns prices in EUR
-- Automatic EUR → INR conversion at `1 EUR = 107.37 INR`
-- Both `total` and `grandTotal` are converted
-
-### 📊 Observability
-- **Langfuse** integration for LLM tracing and monitoring
-- Automatically reads `LANGFUSE_SECRET_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_BASE_URL` from environment
-- Graceful fallback — runs without observability if keys are missing
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Serves the chat UI |
-| `POST` | `/api/chat` | Send message → get agent response + flights |
-| `GET` | `/api/stream?message=...&thread_id=...` | SSE streaming response |
-| `GET` | `/api/memory?thread_id=...` | Retrieve conversation history |
-| `GET` | `/api/new-session` | Generate a fresh thread ID |
-
-### POST /api/chat
-
-**Request:**
-```json
-{
-  "message": "Flights from Kolkata to Mumbai on 15th March",
-  "thread_id": "optional-existing-thread-id"
-}
-```
-
-**Response:**
-```json
-{
-  "response": "Here are the best flights for your trip...",
-  "thread_id": "abc-123-def",
-  "route_decision": "research",
-  "search_params": {
-    "origin": "CCU",
-    "destination": "BOM",
-    "departure_date": "2026-03-15"
-  },
-  "ranked_flights": [...]
-}
-```
+### 🎛️ Customization
+- Company catalog integration
+- Custom branding support
+- Configurable UI themes
+- Agent behavior customization
 
 ---
 
-## Setup & Installation
+## 🚀 Technology Stack
+
+| Category | Technology |
+|----------|------------|
+| **Frontend** | React 19, Next.js 15, TypeScript |
+| **Backend** | Python 3.14+, FastAPI, Flask |
+| **Voice AI** | LiveKit Agents, VAD, WebRTC |
+| **Agent Framework** | LangGraph, LangChain |
+| **LLMs** | OpenAI GPT, Anthropic Claude, Mistral AI |
+| **API Integration** | Amadeus Flight API |
+| **Database** | MongoDB, Redis |
+| **Observability** | Langfuse, Logging |
+| **Deployment** | Docker, Docker Compose, AWS |
+| **Styling** | Tailwind CSS, shadcn/ui |
+
+---
+
+## 📦 Prerequisites
+
+- **Docker** (20.10+)
+- **Docker Compose** (2.0+)
+- **Git**
+- **API Keys** (see Configuration section)
+
+---
+
+## 🛠️ Setup and Installation
 
 ### 1. Clone the Repository
 
@@ -159,115 +160,431 @@ git clone https://github.com/arpanchakraborty23/Flight-Booking-Agentic-System.gi
 cd Flight-Booking-Agentic-System
 ```
 
-### 2. Create Virtual Environment
+### 2. Create Environment File
 
 ```bash
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# Linux/Mac
-source .venv/bin/activate
+cp .env.example .env
 ```
 
-### 3. Install Dependencies
+### 3. Configure API Keys
 
-```bash
-pip install -e .
-```
-
-Or using `uv`:
-```bash
-uv sync
-```
-
-### 4. Configure Environment Variables
-
-Create a `.env` file in the project root:
+Edit `.env` file with your API keys:
 
 ```env
-# Required
-MISTRAL_API_KEY="your-mistral-api-key"
-Amadeus_API_Key="your-amadeus-api-key"
-Amadeus_API_Secret="your-amadeus-api-secret"
+# Amadeus Flight API
+Amadeus_API_Key=your_amadeus_key
+Amadeus_API_Secret=your_amadeus_secret
 
-# Optional (Langfuse observability)
-LANGFUSE_SECRET_KEY="sk-lf-..."
-LANGFUSE_PUBLIC_KEY="pk-lf-..."
-LANGFUSE_BASE_URL="https://cloud.langfuse.com"
+# Mistral AI (Planner Agent)
+MISTRAL_API_KEY=your_mistral_key
+
+# OpenAI API (Planner Agent)
+OPENAI_API_KEY=your_openai_key
+
+# Anthropic API (Planner Agent)
+ANTHROPIC_API_KEY=your_anthropic_key
+
+# LiveKit Configuration
+LIVEKIT_URL=wss://your-livekit-url
+LIVEKIT_API_KEY=your_livekit_key
+LIVEKIT_API_SECRET=your_livekit_secret
+
+# Database (Optional - for production)
+MONGODB_URI=mongodb://mongo:27017/travel-agent
+REDIS_URL=redis://redis:6379
+
+# Langfuse Observability (Optional)
+LANGFUSE_PUBLIC_KEY=your_langfuse_public_key
+LANGFUSE_SECRET_KEY=your_langfuse_secret_key
 ```
 
-**Get API Keys:**
-- **Mistral AI**: [console.mistral.ai](https://console.mistral.ai/)
-- **Amadeus**: [developers.amadeus.com](https://developers.amadeus.com/) (free test account)
-- **Langfuse** (optional): [cloud.langfuse.com](https://cloud.langfuse.com/)
+### 4. Build and Run
 
-### 5. Run the Application
-
-**Web server:**
 ```bash
-python app.py
-```
-Open [http://localhost:8000](http://localhost:8000) in your browser.
+# Build all containers
+docker-compose build
 
-**CLI test:**
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+### 5. Access the Application
+
+- **Web UI**: http://localhost:8000
+- **Voice Agent**: http://localhost:8081
+- **Planner Agent Health**: http://localhost:8082/health
+- **MCP Server Health**: http://localhost:8083/health
+
+---
+
+## 📖 Detailed Component Setup
+
+### Frontend Development
+
 ```bash
-python main.py
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Access: http://localhost:3000
+
+### Voice Agent Development
+
+```bash
+cd voice_agent
+uv sync
+uv run python src/agent.py dev
+```
+
+### Planner Agent Development
+
+```bash
+cd planner_agent
+uv sync
+uv run python app.py
 ```
 
 ---
 
-## Tech Stack
+## 🌍 Development Commands
 
-| Technology | Purpose |
-|------------|---------|
-| **Python 3.14+** | Runtime |
-| **FastAPI** | Web framework & API server |
-| **LangGraph** | Stateful agent graph orchestration |
-| **LangChain** | LLM abstraction layer |
-| **Mistral AI** | Large Language Model (chat completions) |
-| **Amadeus API** | Real-time flight search data |
-| **Langfuse** | LLM observability & tracing |
-| **Jinja2** | HTML templating |
-| **Uvicorn** | ASGI server |
+### GitHub Actions
 
----
+```bash
+# Run tests locally
+act -j test
 
-## LLM Prompts
+# Build containers
+act -j build
 
-All prompts are centralized in `backend/prompts/__init__.py`:
+# Deploy (requires AWS configuration)
+act -j deploy
+```
 
-| Prompt | Purpose |
-|--------|---------|
-| `ROUTE_PROMPT` | Classifies user intent (general / research / booking) |
-| `SEARCH_PARAMS_PROMPT` | Extracts IATA codes, dates, adults from user query |
-| `RANK_FLIGHTS_PROMPT` | Ranks flight offers based on user preferences |
-| `RESPONSE_FORMAT_PROMPT` | Formats ranked flights into a conversational response |
+### Database Management
 
----
+```bash
+# MongoDB Shell
+docker exec -it mongo mongosh
 
-## Key Design Decisions
+# Redis CLI
+docker exec -it redis redis-cli
+```
 
-1. **LangGraph over LangChain Agents** — Explicit graph-based control flow instead of ReAct-style tool calling. More predictable and debuggable.
-2. **Memory via Checkpointer** — Thread-scoped `InMemorySaver` for development. Can be swapped for SQLite/PostgreSQL in production.
-3. **EUR → INR Conversion** — Amadeus test API doesn't support INR, so conversion is done in code after API response.
-4. **Resilient Ranking** — If the ranking LLM call fails, original API results are returned unranked instead of crashing.
-5. **Prompt Centralization** — All prompts in one module for easy tuning without touching node logic.
+### Testing
 
----
+```bash
+# Test API endpoints
+curl http://localhost:8000/health
 
-## Future Enhancements
+# Test voice agent
+curl http://localhost:8081/health
 
-- [ ] **Booking Node** — Complete the booking flow with passenger details
-- [ ] **Persistent Memory** — Replace `InMemorySaver` with SQLite/PostgreSQL checkpointer
-- [ ] **True Token Streaming** — Stream directly from LLM instead of word-by-word simulation
-- [ ] **Return Flight Support** — Handle round-trip flight searches
-- [ ] **Multi-language Support** — Add Hindi and other language prompts
-- [ ] **Authentication** — User login and booking history
+# Test planner agent
+curl http://localhost:8082/health
+
+# Test MCP server
+curl http://localhost:8083/health
+```
 
 ---
 
-## License
+## 📡 API Endpoints
 
-This project is for educational and development purposes.
+### Frontend API (Port 8000)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Main web interface |
+| `GET` | `/health` | Health check |
+| `POST` | `/api/chat` | Send message to agent |
+| `GET` | `/api/stream` | Stream agent responses |
+| `GET` | `/api/memory` | Get conversation history |
+| `GET` | `/api/new-session` | Create new session |
+
+### Voice Agent (Port 8081)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/connect` | Connect to LiveKit room |
+| `POST` | `/start` | Start voice session |
+
+### Planner Agent (Port 8082)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/api/chat` | Query planner agent |
+| `POST` | `/search` | Search flights |
+| `POST` | `/plan` | Plan itinerary |
+
+### MCP Server (Port 8083)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/tools` | Execute tool calls |
+| `POST` | `/search/flights` | Search Amadeus flights |
+
+---
+
+## 🔧 Configuration
+
+### Web UI Configuration
+
+Edit `frontend/app-config.ts`:
+
+```typescript
+export const APP_CONFIG_DEFAULTS: AppConfig = {
+  companyName: 'Your Travel Company',
+  pageTitle: 'Custom Travel Booking',
+  pageDescription: 'Plan your custom travel with AI assistance',
+
+  supportsChatInput: true,
+  supportsVideoInput: false,
+  supportsScreenShare: false,
+  isPreConnectBufferEnabled: true,
+
+  logo: '/your-logo.svg',
+  accent: '#002cf2',
+  accentDark: '#1fd5f9',
+  startButtonText: 'Start Planning',
+
+  audioVisualizerType: 'bar',
+  agentName: 'travel-assistant',
+};
+```
+
+### Voice Agent Configuration
+
+Edit `voice_agent/.env`:
+
+```env
+# LiveKit Configuration
+LIVEKIT_URL=wss://your-livekit-url
+LIVEKIT_API_KEY=your_livekit_key
+LIVEKIT_API_SECRET=your_livekit_secret
+
+# Language Support
+DEFAULT_LANGUAGE=en  # en, bn, hi
+
+# Features
+ENABLE_VAD=true
+ENABLE_NOISE_CANCELLATION=true
+```
+
+### Planner Agent Configuration
+
+Edit `planner_agent/.env`:
+
+```env
+# LLM Configuration
+PRIMARY_LLM=mistral  # mistral, openai, anthropic
+MISTRAL_API_KEY=your_mistral_key
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+
+# Amadeus API
+Amadeus_API_Key=your_amadeus_key
+Amadeus_API_Secret=your_amadeus_secret
+
+# Advanced Settings
+MEMORY_TYPE=inmemory  # inmemory, sqlite, postgres
+ENABLE_LANGFUSE=true
+```
+
+---
+
+## 🚀 Deployment
+
+### AWS Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete AWS deployment guide.
+
+Quick steps:
+
+```bash
+# Build containers
+docker-compose build
+
+# Push to ECR (Amazon Container Registry)
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+
+# Tag images
+docker tag voice-agent:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/travel-agent:voice-latest
+docker tag planner-agent:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/travel-agent:planner-latest
+
+# Push to registry
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/travel-agent:voice-latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/travel-agent:planner-latest
+```
+
+### Local Production
+
+```bash
+# Use production docker-compose
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Or build individually
+docker build -t travel-frontend .
+docker build -t travel-voice ./voice_agent
+docker build -t travel-planner ./planner_agent
+docker build -t travel-mcp ./mcp
+```
+
+---
+
+## 📚 Project Structure
+
+```
+Flight-Booking-Agentic-System/
+├── frontend/                      # React/Next.js web interface
+│   ├── app/                       # Next.js app router
+│   ├── components/                # Reusable UI components
+│   ├── hooks/                     # Custom React hooks
+│   ├── lib/                       # Utility functions
+│   └── app-config.ts             # Application configuration
+│
+├── voice_agent/                   # LiveKit voice agent
+│   ├── src/
+│   │   └── agent.py              # Main voice agent logic
+│   ├── pyproject.toml            # Python dependencies
+│   └── .env.example              # Environment variables template
+│
+├── planner_agent/                 # Flight planning agent
+│   ├── backend/
+│   │   ├── agent/                # Agent orchestration
+│   │   ├── nodes/                # LangGraph nodes
+│   │   └── prompts/              # LLM prompts
+│   ├── constants/                # Configuration constants
+│   ├── utils/                    # Utility functions
+│   └── app.py                    # FastAPI server
+│
+├── mcp/                           # MCP server for tool calling
+│   ├── tools/                    # Available tools
+│   ├── utils/                    # Utility modules
+│   └── Dockerfile                # Container image
+│
+├── docs/                         # Documentation
+│   ├── CONTAINER-ARCHITECTURE.md # Container architecture overview
+│   └── DEPLOYMENT.md            # AWS deployment guide
+│
+├── docker-compose.yml            # Main compose configuration
+├── Dockerfile                    # Frontend API container
+├── .env.example                  # Environment variables template
+└── README.md                     # This file
+```
+
+---
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Voice Agent Not Connecting**
+```bash
+# Check LiveKit credentials
+docker exec voice-agent env | grep LIVEKIT
+
+# Test WebSocket connection
+curl -i -N \
+  --header "Connection: Upgrade" \
+  --header "Upgrade: websocket" \
+  --header "Host: localhost:8081" \
+  --header "Origin: http://localhost:8081" \
+  http://localhost:8081/
+```
+
+**Planner Agent Fails**
+```bash
+# Check API keys
+docker exec planner-agent env | grep API_KEY
+
+# Test API call
+curl -X POST http://localhost:8082/health
+```
+
+**MCP Server Issues**
+```bash
+# Check Amadeus API connectivity
+docker exec mcp-server curl -I https://api.amadeus.com
+
+# Test MCP tools
+curl -X POST http://localhost:8083/health
+```
+
+**Container Won't Start**
+```bash
+# View detailed logs
+docker-compose logs -f <service-name>
+
+# Check container status
+docker ps -a
+
+# Clean and rebuild
+docker-compose down --volumes
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+# Set debug environment variable
+echo "DEBUG=true" >> .env
+
+# Restart services
+docker-compose restart
+
+# Watch logs with debug info
+docker-compose logs -f | grep DEBUG
+```
+
+---
+
+## 📖 Additional Documentation
+
+- [Component Architecture](docs/CONTAINER-ARCHITECTURE.md) - Detailed container architecture
+- [AWS Deployment Guide](docs/DEPLOYMENT.md) - Complete deployment instructions
+- [Voice Agent README](voice_agent/README.md) - Voice agent specific documentation
+- [Planner Agent README](planner_agent/README.md) - Planner agent documentation
+- [Frontend README](frontend/README.md) - Frontend development guide
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed for educational and development purposes.
+
+---
+
+## 🙏 Acknowledgments
+
+- **LiveKit** for voice AI infrastructure
+- **Amadeus** for flight data API
+- **Mistral AI, OpenAI, Anthropic** for LLM capabilities
+- **LangGraph/LangChain** for agent framework
+- **Docker** for containerization
+
+---
+
+**Built with ❤️ for modern travel planning**
+
+For questions or support, please open an issue in the repository.
